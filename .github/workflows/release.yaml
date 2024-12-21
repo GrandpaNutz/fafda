@@ -1,8 +1,12 @@
-name: Fafda Binary
+name: fafda Binary
 
 on:
   release:
     types: [created]
+  workflow_dispatch:
+
+env:
+  CMD_PATH: ./cmd/fafda
 
 jobs:
   release-fafda:
@@ -13,16 +17,29 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux]
-        goarch: [amd64]
+        goos: [linux, windows, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:  
+          # windows/386 and darwin/386 seems useless 
+          - goarch: "386"
+            goos: windows
+          - goarch: "386"
+            goos: darwin
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set BUILD_TIME env
+        run: echo BUILD_TIME=$(date) >> ${GITHUB_ENV}
+      - name: Environment Printer
+        uses: managedkaos/print-env@v1.0
+
       - uses: wangyoucao577/go-release-action@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.goarch }}
-          project_path: "./cmd/fafda"
+          project_path: "${{ env.CMD_PATH }}"
           binary_name: "fafda"
           compress_assets: "OFF"
           md5sum: true
